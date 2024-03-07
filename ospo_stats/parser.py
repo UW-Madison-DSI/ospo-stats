@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def parse(data: dict) -> dict | None:
+def parse_discover_response(data: dict) -> dict | None:
     """Flatten the data from the GitHub API to make it easier to work with."""
 
     empty = data["repo"]["defaultBranchRef"] is None
@@ -23,14 +23,33 @@ def parse(data: dict) -> dict | None:
 
     return {
         "name": data["repo"]["name"],
-        "url": data["repo"]["url"],
         "description": data["repo"]["description"],
+        "owner": data["repo"]["owner"]["login"],
+        "url": data["repo"]["url"],
         "created_at": data["repo"]["createdAt"],
         "pushed_at": data["repo"]["pushedAt"],
         "stars": data["repo"]["stargazers"]["totalCount"],
         "issues": data["repo"]["issues"]["totalCount"],
         "commits": data["repo"]["defaultBranchRef"]["target"]["history"]["totalCount"],
         "readme": readme,
+    }
+
+
+def parse_stargazers(raw_data: dict) -> dict:
+    return {
+        "starred_at": raw_data["starredAt"],
+        "user": raw_data["node"]["login"],
+    }
+
+
+def parse_commits(raw_data: dict) -> dict:
+    return {
+        "committed_at": raw_data["node"]["committedDate"],
+        "url": raw_data["node"]["url"],
+        "additions": raw_data["node"]["additions"],
+        "deletions": raw_data["node"]["deletions"],
+        "committer_name": raw_data["node"]["committer"]["name"],
+        "committer_email": raw_data["node"]["committer"]["email"],
     }
 
 
@@ -47,6 +66,6 @@ def load(data_path: Path | str) -> pd.DataFrame:
         logging.info(file)
         with open(file, "r") as f:
             data = json.load(f)
-        parsed_data.extend([parse(d) for d in data if parse(d) is not None])
+        parsed_data.extend([parse_discover_response(d) for d in data])
 
-    return pd.DataFrame(parsed_data)
+    return pd.DataFrame([p for p in parsed_data if p is not None])
