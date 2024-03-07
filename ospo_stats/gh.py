@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from .query import get_repo_discovery_query, get_commits_query, get_stargazers_query
 
 load_dotenv()
-logging.basicConfig(level=logging.ERROR)
 
 YEAR_NOW = datetime.now().year
 
@@ -112,10 +111,13 @@ def discover_repos(
     year_min: int = 2008,
     year_max: int = YEAR_NOW,
     overwrite: bool = False,
-) -> None:
+    output_dir: Path | str = "data"
+ ) -> None:
     """Crawl github for repositories matching a keyword."""
 
-    Path("data").mkdir(exist_ok=True, parents=True)
+    if isinstance(output_dir, str):
+        output_dir = Path(output_dir)
+    output_dir.mkdir(exist_ok=True, parents=True)
 
     for year in range(year_min, year_max + 1):
         if Path(f"data/repos_{year}.json").exists() and not overwrite:
@@ -129,5 +131,5 @@ def discover_repos(
             logging.info(f"No repos found for {year}")
             continue
 
-        with open(f"data/repos_{year}.json", "w") as f:
+        with open(output_dir / f"repos_{year}.json", "w") as f:
             f.write(json.dumps(this_year_repos, indent=4))
