@@ -21,16 +21,27 @@ def parse_discover_response(data: dict) -> dict | None:
         logging.info(f"{data['repo']['url']} had no README file")
         readme = None
 
+    if data["repo"]["licenseInfo"] is None:
+        license_key = None
+        license_name = None
+    else:
+        license_key = data["repo"]["licenseInfo"]["key"]
+        license_name = data["repo"]["licenseInfo"]["name"]
+
     return {
+        "url": data["repo"]["url"],
+        "last_pushed_at": data["repo"]["pushedAt"],
+        "owner": data["repo"]["owner"]["login"],
         "name": data["repo"]["name"],
         "description": data["repo"]["description"],
-        "owner": data["repo"]["owner"]["login"],
-        "url": data["repo"]["url"],
+        "license_key": license_key,
+        "license_name": license_name,
+        "total_stargazer_count": data["repo"]["stargazers"]["totalCount"],
+        "total_issues_count": data["repo"]["total_issues"]["totalCount"],
+        "total_open_issues_count": data["repo"]["open_issues"]["totalCount"],
+        "total_forks_count": data["repo"]["forks"]["totalCount"],
+        "total_watchers_count": data["repo"]["watchers"]["totalCount"],
         "created_at": data["repo"]["createdAt"],
-        "pushed_at": data["repo"]["pushedAt"],
-        "stars": data["repo"]["stargazers"]["totalCount"],
-        "issues": data["repo"]["issues"]["totalCount"],
-        "commits": data["repo"]["defaultBranchRef"]["target"]["history"]["totalCount"],
         "readme": readme,
     }
 

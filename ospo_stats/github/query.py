@@ -20,13 +20,27 @@ _REPO_DISCOVERY = """
           }}
           name
           url
+          homepageUrl
+          licenseInfo {{
+            key
+            name
+          }}
           description
           createdAt
           pushedAt
           stargazers {{
             totalCount
           }}
-          issues {{
+          watchers {{
+            totalCount
+          }}
+          forks {{
+            totalCount
+          }}  
+          total_issues: issues {{
+            totalCount
+          }}
+          open_issues: issues(states: OPEN) {{
             totalCount
           }}
 
