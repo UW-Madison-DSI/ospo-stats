@@ -8,8 +8,12 @@ from time import sleep
 import requests
 import tenacity
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
 
-from .query import get_repo_discovery_query, get_commits_query, get_stargazers_query
+from ospo_stats.db import ENGINE, Repo
+
+from .parser import parse_discover_response
+from .query import get_commits_query, get_repo_discovery_query, get_stargazers_query
 
 load_dotenv()
 
@@ -110,9 +114,9 @@ def discover_repos(
     term: str,
     year_min: int = 2008,
     year_max: int = YEAR_NOW,
-    overwrite: bool = False,
-    output_dir: Path | str = "data"
- ) -> None:
+    output_dir: Path | str = "data",
+    push_to_turso: bool = True,
+) -> None:
     """Crawl github for repositories matching a keyword."""
 
     if isinstance(output_dir, str):
@@ -120,10 +124,6 @@ def discover_repos(
     output_dir.mkdir(exist_ok=True, parents=True)
 
     for year in range(year_min, year_max + 1):
-        if Path(f"data/repos_{year}.json").exists() and not overwrite:
-            logging.info(f"Skipping {year} because it already exists")
-            continue
-
         logging.info(f"Searching for {year}:")
         this_year_repos = discover_yearly(term, year)
 
@@ -131,5 +131,26 @@ def discover_repos(
             logging.info(f"No repos found for {year}")
             continue
 
-        with open(output_dir / f"repos_{year}.json", "w") as f:
+        # Save the results locally
+        json_file = output_dir / f"repos_{year}.json"
+        with open(json_file, "w") as f:
             f.write(json.dumps(this_year_repos, indent=4))
+
+        if not push_to_turso:
+            continue
+
+        # Parse and Push to Turso
+        parsed = [parse_discover_response(repo) for repo in this_year_repos]
+        parsed = [p for p in parsed if p is not None]
+        objects = [Repo(**repo) for repo in parsed]
+
+        with Session(ENGINE).no_autoflush as session:
+            for repo in objects:
+                session.merge(repo)
+            session.commit()
+
+
+if __name__ == "__main__":
+    discover_repos("uw-madison")
+    discover_repos("wisc.edu")
+    discover_repos("wisconsin")

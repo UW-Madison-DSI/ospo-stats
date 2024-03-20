@@ -33,48 +33,30 @@ class Repo(Base):
 
     __tablename__ = "repo"
     url: Mapped[str] = mapped_column(String(1024), primary_key=True)
-    homepage_url: Mapped[Optional[str]] = mapped_column(String(1024))
     crawl_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.current_timestamp()
     )
     created_at: Mapped[datetime] = mapped_column(DateTime)
-    last_pushed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     owner: Mapped[str] = mapped_column(String(256))
     name: Mapped[str] = mapped_column(String(256))
-    description: Mapped[str] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    homepage_url: Mapped[Optional[str]] = mapped_column(String(1024))
+    last_pushed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     license_key: Mapped[Optional[str]] = mapped_column(String(256))
     license_name: Mapped[Optional[str]] = mapped_column(String(256))
+    readme: Mapped[Optional[str]] = mapped_column(Text)
+    readme_has_image: Mapped[Optional[bool]] = mapped_column(Boolean)
     total_stargazer_count: Mapped[int] = mapped_column(Integer)
     total_issues_count: Mapped[int] = mapped_column(Integer)
     total_open_issues_count: Mapped[int] = mapped_column(Integer)
     total_forks_count: Mapped[int] = mapped_column(Integer)
     total_watchers_count: Mapped[int] = mapped_column(Integer)
-    readme: Mapped[Optional[str]] = mapped_column(Text)
-    readme_has_image: Mapped[bool] = mapped_column(Boolean)
+
+    def __repr__(self) -> str:
+        return f"Repo({self.owner}/{self.name})"
 
 
-def insert_example_data():
-    """Insert example data to the database."""
-
-    with Session(ENGINE) as session:
-        repo = Repo(
-            url="https://github.com/UW-Madison-DSI/ospo-stats",
-            homepage_url="https://datascience.wisc.edu/",
-            created_at=datetime.now(),
-            last_pushed_at=datetime.now(),
-            owner="UW-Madison-DSI",
-            name="ospo-stats",
-            description="Open Source Program Office (OSPO) Stats",
-            license_key="mit",
-            license_name="MIT License",
-            total_stargazer_count=0,
-            total_issues_count=0,
-            total_open_issues_count=0,
-            total_forks_count=0,
-            total_watchers_count=0,
-            readme="This is a test readme.",
-            readme_has_image=False,
-        )
-
-        session.add(repo)
-        session.commit()
+def hard_reset() -> None:
+    """Wipe the database and re-create."""
+    Base.metadata.drop_all(ENGINE)
+    Base.metadata.create_all(ENGINE)

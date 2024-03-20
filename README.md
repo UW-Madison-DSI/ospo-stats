@@ -2,6 +2,13 @@
 
 Some statistics on open-source projects within UW-Madison.
 
+## Data source
+
+- Github via GraphQL API
+  - [Repository search](ospo_stats/github/query.py#L135), keywords: ["uw-madison", "wise.edu", "wisconsin", "madison"]
+  - (Working) User search, location: [madison, wisconsin] -> all their public repos
+- GitLab
+  - ???
 
 ## For developers
 

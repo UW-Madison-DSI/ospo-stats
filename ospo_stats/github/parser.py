@@ -1,8 +1,28 @@
 import json
 import logging
+import re
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+
+
+def has_image(readme_content: str) -> bool:
+    """Check if the README contains an image."""
+
+    # Regex for Markdown image
+    markdown_image_regex = r"!\[.*?\]\(.*?\)"
+
+    # Regex for HTML img tag
+    html_image_regex = r"<img .*?src=\".*?\".*?>"
+
+    # Search for images
+    contains_markdown_image = (
+        re.search(markdown_image_regex, readme_content) is not None
+    )
+    contains_html_image = re.search(html_image_regex, readme_content) is not None
+
+    return contains_markdown_image or contains_html_image
 
 
 def parse_discover_response(data: dict) -> dict | None:
@@ -12,38 +32,44 @@ def parse_discover_response(data: dict) -> dict | None:
     if empty:
         return None
 
-    if data["repo"]["readme_standard"]:
-        readme = data["repo"]["readme_standard"]["text"]
-    elif data["repo"]["readme_lower"]:
-        logging.info(f"{data['repo']['url']} used a lowercase README file")
-        readme = data["repo"]["readme_lower"]["text"]
-    else:
-        logging.info(f"{data['repo']['url']} had no README file")
-        readme = None
-
-    if data["repo"]["licenseInfo"] is None:
-        license_key = None
-        license_name = None
-    else:
-        license_key = data["repo"]["licenseInfo"]["key"]
-        license_name = data["repo"]["licenseInfo"]["name"]
-
-    return {
+    output = {
         "url": data["repo"]["url"],
-        "last_pushed_at": data["repo"]["pushedAt"],
+        "created_at": datetime.strptime(
+            data["repo"]["createdAt"], "%Y-%m-%dT%H:%M:%SZ"
+        ),
+        "last_pushed_at": datetime.strptime(
+            data["repo"]["pushedAt"], "%Y-%m-%dT%H:%M:%SZ"
+        ),
         "owner": data["repo"]["owner"]["login"],
         "name": data["repo"]["name"],
         "description": data["repo"]["description"],
-        "license_key": license_key,
-        "license_name": license_name,
         "total_stargazer_count": data["repo"]["stargazers"]["totalCount"],
         "total_issues_count": data["repo"]["total_issues"]["totalCount"],
         "total_open_issues_count": data["repo"]["open_issues"]["totalCount"],
         "total_forks_count": data["repo"]["forks"]["totalCount"],
         "total_watchers_count": data["repo"]["watchers"]["totalCount"],
-        "created_at": data["repo"]["createdAt"],
-        "readme": readme,
     }
+
+    # Append optional fields
+    if data["repo"]["readme_standard"]:
+        output["readme"] = data["repo"]["readme_standard"]["text"]
+    elif data["repo"]["readme_lower"]:
+        logging.info(f"{data['repo']['url']} used a lowercase README file")
+        output["readme"] = data["repo"]["readme_lower"]["text"]
+    else:
+        logging.info(f"{data['repo']['url']} had no README file")
+
+    if "readme" in output:
+        output["readme_has_image"] = has_image(output["readme"])
+
+    if data["repo"]["licenseInfo"]:
+        output["license_key"] = data["repo"]["licenseInfo"]["key"]
+        output["license_name"] = data["repo"]["licenseInfo"]["name"]
+
+    if data["repo"]["homepageUrl"]:
+        output["homepage_url"] = data["repo"]["homepageUrl"]
+
+    return output
 
 
 def parse_stargazers(raw_data: dict) -> dict:
