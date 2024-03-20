@@ -132,7 +132,7 @@ def discover_repos(
             continue
 
         # Save the results locally
-        json_file = output_dir / f"repos_{year}.json"
+        json_file = output_dir / f"repos_{term}_{year}.json"
         with open(json_file, "w") as f:
             f.write(json.dumps(this_year_repos, indent=4))
 
