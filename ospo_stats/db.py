@@ -12,7 +12,7 @@ from sqlalchemy import (
     create_engine,
     func,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 load_dotenv()
 TURSO_DB_URL = os.getenv("TURSO_DB_URL")
