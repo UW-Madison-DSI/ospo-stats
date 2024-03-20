@@ -1,0 +1,21 @@
+{
+	"login": "ddhangdd",
+	"id": 43976109,
+	"node_id": "MDQ6VXNlcjQzOTc2MTA5",
+	"avatar_url": "https://avatars.githubusercontent.com/u/43976109?v=4",
+	"gravatar_id": "",
+	"url": "https://api.github.com/users/ddhangdd",
+	"html_url": "https://github.com/ddhangdd",
+	"followers_url": "https://api.github.com/users/ddhangdd/followers",
+	"following_url": "https://api.github.com/users/ddhangdd/following{/other_user}",
+	"gists_url": "https://api.github.com/users/ddhangdd/gists{/gist_id}",
+	"starred_url": "https://api.github.com/users/ddhangdd/starred{/owner}{/repo}",
+	"subscriptions_url": "https://api.github.com/users/ddhangdd/subscriptions",
+	"organizations_url": "https://api.github.com/users/ddhangdd/orgs",
+	"repos_url": "https://api.github.com/users/ddhangdd/repos",
+	"events_url": "https://api.github.com/users/ddhangdd/events{/privacy}",
+	"received_events_url": "https://api.github.com/users/ddhangdd/received_events",
+	"type": "User",
+	"site_admin": false,
+	"score": 1.0
+}
