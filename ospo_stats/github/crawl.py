@@ -151,6 +151,7 @@ def discover_repos(
 
 
 if __name__ == "__main__":
-    discover_repos("uw-madison")
+    # discover_repos("uw-madison")  # This is a subset of "madison"
     discover_repos("wisc.edu")
     discover_repos("wisconsin")
+    discover_repos("madison")
