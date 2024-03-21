@@ -60,7 +60,7 @@ class Repo(Base):
 class Commit(Base):
     """Commit table ORM definition."""
 
-    __tablename__ = "commit"
+    __tablename__ = "commit_history"
     url: Mapped[str] = mapped_column(String(1024), primary_key=True)
     repo_url: Mapped[str] = mapped_column(String(1024), ForeignKey("repo.url"))
     committed_at: Mapped[datetime] = mapped_column(DateTime)
@@ -76,7 +76,7 @@ class Commit(Base):
 class Stargazer(Base):
     """Stargazer table ORM definition."""
 
-    __tablename__ = "stargazer"
+    __tablename__ = "stargazer_history"
     id: Mapped[str] = mapped_column(
         String(1281), primary_key=True
     )  # f"{repo_url}/{user}"
