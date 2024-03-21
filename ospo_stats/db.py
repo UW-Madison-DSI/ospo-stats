@@ -21,7 +21,7 @@ TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN")
 ENGINE = create_engine(
     f"sqlite+{TURSO_DB_URL}/?authToken={TURSO_AUTH_TOKEN}&secure=true",
     connect_args={"check_same_thread": False},
-    echo=True,
+    echo=False,
 )
 
 
@@ -77,7 +77,9 @@ class Stargazer(Base):
     """Stargazer table ORM definition."""
 
     __tablename__ = "stargazer"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[str] = mapped_column(
+        String(1281), primary_key=True
+    )  # f"{repo_url}/{user}"
     repo_url: Mapped[str] = mapped_column(String(1024), ForeignKey("repo.url"))
     user: Mapped[str] = mapped_column(String(256))
     starred_at: Mapped[datetime] = mapped_column(
