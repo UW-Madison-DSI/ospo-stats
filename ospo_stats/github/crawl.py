@@ -9,11 +9,20 @@ import requests
 import tenacity
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
+from tqdm import tqdm
 
-from ospo_stats.db import ENGINE, Repo
-
-from .parser import parse_discover_response
-from .query import get_commits_query, get_repo_discovery_query, get_stargazers_query
+from ospo_stats.db import ENGINE, Commit, Repo, Stargazer
+from ospo_stats.github.parser import (
+    get_owner_and_repo_name,
+    parse_commits,
+    parse_discover_response,
+    parse_stargazers,
+)
+from ospo_stats.github.query import (
+    get_commits_query,
+    get_repo_discovery_query,
+    get_stargazers_query,
+)
 
 load_dotenv()
 
@@ -146,11 +155,72 @@ def discover_repos(
         with Session(ENGINE).no_autoflush as session:
             for repo in objects:
                 session.merge(repo)
+            session.flush()
             session.commit()
 
 
+def crawl_commits(url: str) -> list[Commit]:
+    owner, repo = get_owner_and_repo_name(url)
+    raw_commits = get_commits(owner, repo)
+
+    commits = []
+    for commit in raw_commits:
+        parsed = parse_commits(commit)
+        parsed["repo_url"] = url
+        commits.append(Commit(**parsed))
+    return commits
+
+
+def crawl_stargazers(url: str) -> list[Stargazer]:
+    owner, repo = get_owner_and_repo_name(url)
+    raw_stargazers = get_stargazers(owner, repo)
+
+    stargazers = []
+    for stargazer in raw_stargazers:
+        parsed = parse_stargazers(stargazer)
+        parsed["repo_url"] = url
+        parsed["id"] = f"{url}/{parsed['user']}"
+        stargazers.append(Stargazer(**parsed))
+    return stargazers
+
+
+def push(objects: list[Commit] | list[Stargazer], session: Session):
+    """Push commits or stargazers to Turso."""
+    for i, commit in enumerate(objects):
+        session.merge(commit)
+        if (i + 1) % 100 == 0:  # commit every 100 items
+            session.flush()
+            session.commit()
+    session.flush()
+    session.commit()  # commit remaining items
+
+
+def crawl_history(repo_url: str) -> None:
+    """Crawl the commit history of a repository."""
+    commits = crawl_commits(repo_url)
+    stargazers = crawl_stargazers(repo_url)
+
+    with Session(ENGINE) as session:
+        push(commits, session)
+        push(stargazers, session)
+
+
+def main() -> None:
+    """Crawl data."""
+    # Repo discovery
+    # discover_repos("uw-madison")  # This is a somehow not a subset of "madison"
+    # discover_repos("wisc.edu")
+    # discover_repos("wisconsin")
+    # discover_repos("madison")
+
+    # History
+    with Session(ENGINE) as session:
+        query = session.query(Repo.url)
+
+    repos = [row.url for row in query]
+    for repo in tqdm(repos):
+        crawl_history(repo)
+
+
 if __name__ == "__main__":
-    discover_repos("uw-madison")  # This is a somehow not a subset of "madison"
-    discover_repos("wisc.edu")
-    discover_repos("wisconsin")
-    discover_repos("madison")
+    main()

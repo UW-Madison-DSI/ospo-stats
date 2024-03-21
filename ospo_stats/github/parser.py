@@ -7,6 +7,13 @@ from pathlib import Path
 import pandas as pd
 
 
+def get_owner_and_repo_name(url: str) -> tuple[str, str]:
+    """Get owner and repo name from the url."""
+
+    x = url.replace("https://github.com/", "").split("/")
+    return x[0], x[1]
+
+
 def has_image(readme_content: str) -> bool:
     """Check if the README contains an image."""
 
