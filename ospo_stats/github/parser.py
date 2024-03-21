@@ -74,14 +74,16 @@ def parse_discover_response(data: dict) -> dict | None:
 
 def parse_stargazers(raw_data: dict) -> dict:
     return {
-        "starred_at": raw_data["starredAt"],
+        "starred_at": datetime.strptime(raw_data["starredAt"], "%Y-%m-%dT%H:%M:%SZ"),
         "user": raw_data["node"]["login"],
     }
 
 
 def parse_commits(raw_data: dict) -> dict:
     return {
-        "committed_at": raw_data["node"]["committedDate"],
+        "committed_at": datetime.strptime(
+            raw_data["node"]["committedDate"], "%Y-%m-%dT%H:%M:%SZ"
+        ),
         "url": raw_data["node"]["url"],
         "additions": raw_data["node"]["additions"],
         "deletions": raw_data["node"]["deletions"],

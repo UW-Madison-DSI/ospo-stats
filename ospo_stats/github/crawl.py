@@ -55,7 +55,6 @@ def discover_yearly(term: str, year: int) -> list[dict]:
         if not has_next:
             break
         after_cursor = data["data"]["search"]["pageInfo"]["endCursor"]
-
     return repos
 
 
@@ -151,7 +150,7 @@ def discover_repos(
 
 
 if __name__ == "__main__":
-    # discover_repos("uw-madison")  # This is a subset of "madison"
+    discover_repos("uw-madison")  # This is a somehow not a subset of "madison"
     discover_repos("wisc.edu")
     discover_repos("wisconsin")
     discover_repos("madison")
