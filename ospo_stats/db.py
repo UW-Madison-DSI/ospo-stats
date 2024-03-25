@@ -6,12 +6,12 @@ from dotenv import load_dotenv
 from sqlalchemy import (
     Boolean,
     DateTime,
+    ForeignKey,
     Integer,
     String,
     Text,
     create_engine,
     func,
-    ForeignKey,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 

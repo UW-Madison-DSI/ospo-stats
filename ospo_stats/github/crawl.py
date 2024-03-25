@@ -8,6 +8,7 @@ from time import sleep
 import requests
 import tenacity
 from dotenv import load_dotenv
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from tqdm import tqdm
 
@@ -195,8 +196,22 @@ def push(objects: list[Commit] | list[Stargazer], session: Session):
     session.commit()  # commit remaining items
 
 
-def crawl_history(repo_url: str) -> None:
+def check_repo_in_table(repo_url: str, table: str) -> bool:
+    """Check if a repo is already in the table."""
+    with Session(ENGINE) as session:
+        result = session.execute(
+            text(f'SELECT repo_url FROM {table} WHERE repo_url = "{repo_url}" LIMIT 1')
+        )
+        return bool(result.fetchall())
+
+
+def crawl_history(repo_url: str, skip_existing: bool = True) -> None:
     """Crawl the commit history of a repository."""
+
+    if skip_existing and check_repo_in_table(repo_url, "commit_history"):
+        logging.info(f"Skipping {repo_url}")
+        return
+
     commits = crawl_commits(repo_url)
     stargazers = crawl_stargazers(repo_url)
 
@@ -219,7 +234,10 @@ def main() -> None:
 
     repos = [row.url for row in query]
     for repo in tqdm(repos):
-        crawl_history(repo)
+        try:
+            crawl_history(repo, skip_existing=True)
+        except Exception as e:
+            logging.error(f"Failed to crawl {repo}: {e}")
 
 
 if __name__ == "__main__":
