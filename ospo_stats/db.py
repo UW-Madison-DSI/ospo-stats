@@ -54,6 +54,8 @@ class Repo(Base):
     total_open_issues_count: Mapped[int] = mapped_column(Integer)
     total_forks_count: Mapped[int] = mapped_column(Integer)
     total_watchers_count: Mapped[int] = mapped_column(Integer)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean)
+    category: Mapped[Optional[str]] = mapped_column(String(256))
 
     def __repr__(self) -> str:
         return f"Repo({self.owner}/{self.name})"
