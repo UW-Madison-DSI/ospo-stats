@@ -8,7 +8,7 @@ description = "Open-source project statistics"
 version = "v0.0.0"
 authors = [{name = "Jason Lo", email = "lcmjlo@gmail.com"}]
 requires-python = ">=3.11"
-dependencies = ["tenacity", "requests", "python-dotenv", "pandas", "altair", "sqlalchemy-libsql", "libsql-experimental"]
+dependencies = ["tenacity", "requests", "python-dotenv", "pandas", "altair", "sqlalchemy-libsql", "libsql-experimental", "anthropic"]
 
 [tool.hatch.build.targets.wheel]
 include = ["ospo_stats/*.py"]
