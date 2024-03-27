@@ -1,6 +1,7 @@
 import json
 import time
 
+import tenacity
 from anthropic import Anthropic
 
 
@@ -35,6 +36,10 @@ def create_messages_for_categorization(
     ]
 
 
+@tenacity.retry(
+    wait=tenacity.wait_exponential(),
+    stop=tenacity.stop_after_attempt(5),
+)
 def get_category(
     text: str,
     client: Anthropic | None = None,
