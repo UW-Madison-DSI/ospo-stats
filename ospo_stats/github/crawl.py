@@ -12,7 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from tqdm import tqdm
 
-from ospo_stats.db import ENGINE, Commit, Repo, Stargazer
+from ospo_stats.db import ENGINE, Commit, Repo, Stargazer, push
 from ospo_stats.github.parser import (
     get_owner_and_repo_name,
     parse_commits,
@@ -151,13 +151,8 @@ def discover_repos(
         # Parse and Push to Turso
         parsed = [parse_discover_response(repo) for repo in this_year_repos]
         parsed = [p for p in parsed if p is not None]
-        objects = [Repo(**repo) for repo in parsed]
-
-        with Session(ENGINE).no_autoflush as session:
-            for repo in objects:
-                session.merge(repo)
-            session.flush()
-            session.commit()
+        repos = [Repo(**repo) for repo in parsed]
+        push(repos)
 
 
 def crawl_commits(url: str) -> list[Commit]:
@@ -185,17 +180,6 @@ def crawl_stargazers(url: str) -> list[Stargazer]:
     return stargazers
 
 
-def push(objects: list[Commit] | list[Stargazer], session: Session):
-    """Push commits or stargazers to Turso."""
-    for i, commit in enumerate(objects):
-        session.merge(commit)
-        if (i + 1) % 100 == 0:  # commit every 100 items
-            session.flush()
-            session.commit()
-    session.flush()
-    session.commit()  # commit remaining items
-
-
 def check_repo_in_table(repo_url: str, table: str) -> bool:
     """Check if a repo is already in the table."""
     with Session(ENGINE) as session:
@@ -215,9 +199,8 @@ def crawl_history(repo_url: str, skip_existing: bool = True) -> None:
     commits = crawl_commits(repo_url)
     stargazers = crawl_stargazers(repo_url)
 
-    with Session(ENGINE) as session:
-        push(commits, session)
-        push(stargazers, session)
+    push(commits)
+    push(stargazers)
 
 
 def main() -> None:

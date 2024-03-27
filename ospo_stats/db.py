@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 from typing import Optional
@@ -13,7 +14,8 @@ from sqlalchemy import (
     create_engine,
     func,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from tqdm import tqdm
 
 load_dotenv()
 TURSO_DB_URL = os.getenv("TURSO_DB_URL")
@@ -94,3 +96,17 @@ def hard_reset() -> None:
     """Wipe the database and re-create."""
     Base.metadata.drop_all(ENGINE)
     Base.metadata.create_all(ENGINE)
+
+
+def push(objects: list[Commit] | list[Stargazer] | list[Repo]):
+    """Push repos, commits or stargazers to Turso."""
+
+    with Session(ENGINE).no_autoflush as session:
+        for i, commit in tqdm(enumerate(objects)):
+            logging.info(f"Pushing {commit}")
+            session.merge(commit)
+            if (i + 1) % 100 == 0:  # commit every 100 items
+                session.flush()
+                session.commit()
+        session.flush()
+        session.commit()  # commit remaining items
