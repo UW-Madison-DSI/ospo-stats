@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
+import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import (
     Boolean,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     Text,
     create_engine,
     func,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from tqdm import tqdm
@@ -54,6 +56,8 @@ class Repo(Base):
     total_open_issues_count: Mapped[int] = mapped_column(Integer)
     total_forks_count: Mapped[int] = mapped_column(Integer)
     total_watchers_count: Mapped[int] = mapped_column(Integer)
+    is_active: Mapped[Optional[bool]] = mapped_column(Boolean)
+    category: Mapped[Optional[str]] = mapped_column(String(256))
 
     def __repr__(self) -> str:
         return f"Repo({self.owner}/{self.name})"
@@ -110,3 +114,21 @@ def push(objects: list[Commit] | list[Stargazer] | list[Repo]):
                 session.commit()
         session.flush()
         session.commit()  # commit remaining items
+
+
+def export(table: str) -> pd.DataFrame | None:
+    """Export a table from Turso to a DataFrame."""
+    batch_size = 500
+    dfs = []
+    with ENGINE.connect() as conn:
+        total_rows = conn.execute(text("SELECT COUNT(*) FROM repo")).fetchone()
+        if total_rows is None:
+            return None
+        total_rows = total_rows[0]
+
+        for i in range(0, total_rows, batch_size):
+            print(f"Fetching rows {i} to {i+batch_size}")
+            df = pd.read_sql(f"SELECT * FROM repo LIMIT {batch_size} OFFSET {i}", conn)
+            dfs.append(df)
+
+    return pd.concat(dfs).reset_index(drop=True)
