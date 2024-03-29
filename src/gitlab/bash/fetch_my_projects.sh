@@ -1,1 +1,1 @@
-curl --header "Authorization: Bearer <YOUR PERSONAL ACCESS TOKEN>" "https://git.doit.wisc.edu/api/v4/users/amegahed/projects"
+curl --header "Authorization: Bearer glpat-A56eXGoUtYZ3-5mQWcW6" "https://git.doit.wisc.edu/api/v4/users/amegahed/projects"

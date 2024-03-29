@@ -44,7 +44,18 @@ class Project(Model):
 			string
 		"""
 
-		return self.base_url + '/' + str(self.get('id'))
+		return self.base_url + '/' + str(self.get('id')) + '?license=yes&statistics=yes'
+
+	def languages_url(self):
+
+		"""
+		Gets the url for this project's languages.
+
+		Returns:
+			string
+		"""
+
+		return self.base_url + '/' + str(self.get('id')) + '/languages'
 
 	#
 	# getting methods
@@ -94,12 +105,41 @@ class Project(Model):
 
 		return self
 
+	def fetch_languages(self):
+
+		"""
+		Fetches this project from the GitLab API.
+
+		Returns:
+			Project
+		"""
+
+		# request attributes from API
+		#
+		languages = None
+		request = GitLab().get(self.languages_url())
+		if (request.status_code == 200):
+			languages = request.text
+
+			# strip json formatting
+			#
+			languages = languages.replace('{', '').replace('}', '')
+			languages = languages.replace('"', '')
+
+			# update attributes
+			#
+			self.set('languages', languages)
+		else:
+			print("Error - could not fetch model from " + self.url())
+
+		return languages
+
 	#
 	# searching methods
 	#
 
 	@staticmethod
-	def fetch(page = None):
+	def fetch_by_page(page = None):
 
 		"""
 		Fetch projects from the GitLab API.
@@ -111,8 +151,9 @@ class Project(Model):
 		# query GitLab API
 		#
 		url = Project.base_url;
-		if (page):
+		if (page != None):
 			url += '?per_page=100&page=' + str(page)
+
 		response = GitLab().get(url)
 
 		# parse response
@@ -121,7 +162,41 @@ class Project(Model):
 			return json.loads(response.text)
 
 	@staticmethod
-	def fetch_page(db, table, page = 0):
+	def fetch_by_id(db, table, id):
+
+		"""
+		Fetch and store projects according to a search query.
+
+		Parameters:
+			db (object) - The database to store the project info into.
+			table (string) - The database table store the project info into.
+		Returns:
+			None
+		"""
+
+		# skip project if it already exists
+		#
+		project = Project({
+			'id': id
+		})
+		if (project.exists(db, table)):
+			return project
+
+		project.fetch()
+		project.fetch_languages()
+
+		# delete project if it already exists
+		#
+		if (project.exists(db, table)):
+			project.delete(db, table)
+
+		print("Saving " + project.get('name') if project.has('name') else 'None')
+		project.store(db, table)
+
+		return project
+
+	@staticmethod
+	def fetch_page(db, table, page = 0, detailed = True):
 
 		"""
 		Fetch and store projects according to a search query.
@@ -134,11 +209,11 @@ class Project(Model):
 		"""
 
 		print("Fetching page = " + str(page))
-		data = Project.fetch(page)
+		data = Project.fetch_by_page(page)
 		
 		# check if search returns any results
 		#
-		if (data == None):
+		if (len(data) == 0):
 			return False
 
 		# check total number of projects
@@ -148,15 +223,24 @@ class Project(Model):
 		# store data from page
 		#
 		for i in range(0, len(data)):
-			project = Project(data[i])
+			if (detailed):
 
-			# delete project if it already exists
-			#
-			if (project.exists(db, table)):
-				project.delete(db, table)
+				# fetch project individually
+				#
+				project = Project.fetch_by_id(db, table, data[i]['id'])
+			else:
 
-			print("Saving " + project.get('name'))
-			project.store(db, table)
+				# save project data
+				#
+				project = Project(data[i])
+
+				# delete project if it already exists
+				#
+				if (project.exists(db, table)):
+					project.delete(db, table)
+
+				print("Saving " + project.get('name'))
+				project.store(db, table)
 
 		return True
 
@@ -219,6 +303,13 @@ class Project(Model):
 			'star_count': self.get('star_count'),
 			'open_issues_count': self.get('open_issues_count'),
 
+			# statistics
+			#
+			'commit_count': self.get('statistics')['commit_count'] if self.has('statistics') else None,
+			'storage_size': self.get('statistics')['storage_size'] if self.has('statistics') else None,
+			'repository_size': self.get('statistics')['repository_size'] if self.has('statistics') else None,
+			'languages': self.get('languages') if self.has('languages') else None,
+
 			# namespace
 			#
 			'namespace_id': self.get('namespace_id'),
@@ -236,6 +327,11 @@ class Project(Model):
 			'owner_username': self.get('owner_username'),
 			'owner_name': self.get('owner_name'),
 			'creator_id': self.get('creator_id'),
+
+			# license
+			#
+			'license_key': self.get('license')['key'] if self.has('license') else None,
+			'license_name': self.get('license')['name'] if self.has('license') else None,
 
 			# readme info
 			#

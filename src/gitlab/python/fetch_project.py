@@ -1,10 +1,10 @@
 ################################################################################
 #                                                                              #
-#                                  gitlab.py                                   #
+#                               fetch_project.py                               #
 #                                                                              #
 ################################################################################
 #                                                                              #
-#        This is an abstract base class for fetching GitLab models.            #
+#        This is a utility for fetching projects from the GitLab API           #
 #                                                                              #
 #        Author(s): Abe Megahed                                                #
 #                                                                              #
@@ -15,34 +15,32 @@
 #  Copyright (C) 2024 Data Science Institute, Univeristy of Wisconsin-Madison  #
 ################################################################################
 
-import requests
+from models.project import Project 
+import mysql.connector
 
-class GitLab:
+#
+# globals
+#
 
-	#
-	# attributes
-	#
+table = 'projects';
 
-	url = 'https://git.doit.wisc.edu/api/v4'
-	token = 'glpat-A56eXGoUtYZ3-5mQWcW6'
+#
+# main
+#
 
-	#
-	# querying methods
-	#
+# connect to database
+#
+try:
+	db = mysql.connector.connect(
+		host = "localhost",
+		user = "root",
+		password = "root",
+		database = "gitlab"
+	)
+except:
+	print("No database found.")
+	exit()
 
-	def get(self, url):
-
-		"""
-		Gets data from the GitHub API.
-
-		Parameters:
-			url (string) - The url to fetch.
-		Returns:
-			Request
-		"""
-
-		# initiate the get request
-		#
-		return requests.get(url, headers = {
-			'Authorization': 'Bearer ' + self.token
-		})
+# fetch and store project
+#
+Project.fetch_by_id(db, table, 13771)

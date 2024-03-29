@@ -125,7 +125,10 @@ class Model:
 			Model
 		"""
 
+		print("IN FETCH")
+
 		request = requests.get(self.url())
+		print("TEXT = ", request.text)
 		if (request.status_code == 200):
 			self.attributes = json.loads(request.text)
 		else:
@@ -148,7 +151,7 @@ class Model:
 			boolean
 		"""
 
-		return self.find(db, table) != None
+		return len(self.find(db, table)) != 0
 
 	def find(self, db, table):
 
