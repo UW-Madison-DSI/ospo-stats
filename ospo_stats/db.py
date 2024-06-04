@@ -121,14 +121,16 @@ def export(table: str) -> pd.DataFrame | None:
     batch_size = 500
     dfs = []
     with ENGINE.connect() as conn:
-        total_rows = conn.execute(text("SELECT COUNT(*) FROM repo")).fetchone()
+        total_rows = conn.execute(text(f"SELECT COUNT(*) FROM {table}")).fetchone()
         if total_rows is None:
             return None
         total_rows = total_rows[0]
 
         for i in range(0, total_rows, batch_size):
             print(f"Fetching rows {i} to {i+batch_size}")
-            df = pd.read_sql(f"SELECT * FROM repo LIMIT {batch_size} OFFSET {i}", conn)
+            df = pd.read_sql(
+                f"SELECT * FROM {table} LIMIT {batch_size} OFFSET {i}", conn
+            )
             dfs.append(df)
 
     return pd.concat(dfs).reset_index(drop=True)
